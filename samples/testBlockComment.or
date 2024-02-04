@@ -1,0 +1,6 @@
+// /home/nurda/.jdks/openjdk-21.0.2/bin/java -javaagent:/opt/idea-IC-233.14015.106/lib/idea_rt.jar=39581:/opt/idea-IC-233.14015.106/bin -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath /home/nurda/Projects/out/production/Projects com.craftinginterpreters.ORLang.ORLang samples/testBlockComment.or
+
+/* hello
+/* depth 2
+*/
+world */
