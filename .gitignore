@@ -31,4 +31,3 @@ bin/
 ### Haskell outputs ###
 *.hi
 *.o
-*.
