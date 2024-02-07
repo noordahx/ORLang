@@ -29,5 +29,5 @@ bin/
 .DS_Store
 
 ### Haskell outputs ###
-*.hs
+*.hi
 *.o
