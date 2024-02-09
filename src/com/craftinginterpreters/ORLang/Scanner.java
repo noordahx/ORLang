@@ -63,6 +63,7 @@ class Scanner {
             case ';': addToken(SEMICOLON); break;
             case '*': addToken(STAR); break;
             case '#': addToken(HASH); break;
+            case '?': addToken(QUESTION_MARK); break;
 
             // those that might require to look at second character
             case '!':

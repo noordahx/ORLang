@@ -49,11 +49,17 @@ public class ORLang {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
 
         // For now, just print tokens.
-        for (Token token : tokens) {
+        /*for (Token token : tokens) {
             System.out.println(token);
-        }
+        }*/
+
+        if (hadError) return;
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
     static void error(int line, String message) {
@@ -63,10 +69,17 @@ public class ORLang {
     // report syntax errors occurred
     private static void report(int line, String where, String message) {
         System.err.printf(
-                "[line %d ] Error %s: %s", line, where, message
+                "[ line %d ] Error %s: %s", line, where, message
         );
         hadError = true;
     }
 
+    static void error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message);
+        }
+    }
 
 }
