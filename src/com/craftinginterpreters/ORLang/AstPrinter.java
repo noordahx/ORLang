@@ -22,6 +22,11 @@ class AstPrinter implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitConditionExpr(Expr.Condition expr) {
+        return condition(expr.condition, expr.trueStatement, expr.falseStatement);
+    }
+
+    @Override
     public String visitUnaryExpr(Expr.Unary expr) {
         return parenthesize(expr.operator.lexeme, expr.right);
     }
@@ -33,6 +38,18 @@ class AstPrinter implements Expr.Visitor<String> {
         for (Expr expr : exprs) {
             builder.append(String.format(" %s", expr.accept(this)));
         }
+        builder.append(")");
+
+        return builder.toString();
+    }
+
+    private String condition(Expr condition, Expr trueStatement, Expr falseStatement) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+        builder.append(String.format("%s ? %s : %s ",
+                condition.accept(this),
+                trueStatement.accept(this),
+                falseStatement.accept(this)));
         builder.append(")");
 
         return builder.toString();

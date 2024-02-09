@@ -19,33 +19,33 @@ public class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return comma();
     }
 
-//    private Expr comma() {
-//        Expr expr = ternary();
-//        while(match(COMMA)) {
-//            Token operator = previous();
-//            Expr right = equality();
-//
-//            expr = new Expr.Binary(expr, operator, right);
-//        }
-//
-//        return expr;
-//    }
+    private Expr comma() {
+        Expr expr = ternary();
+        while(match(COMMA)) {
+            Token operator = previous();
+            Expr right = ternary();
 
-//    private Expr ternary() {
-//        Expr expr = equality();
-//        while (match(QUESTION_MARK)) {
-//            Expr trueStatement = equality();
-//            consume(SEMICOLON, "expected : after expression");
-//            Expr falseStatement = equality();
-//
-//            expr = new Expr.Condition(expr, trueStatement, falseStatement);
-//        }
-//
-//        return expr;
-//    }
+            expr = new Expr.Binary(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr ternary() {
+        Expr expr = equality();
+        while (match(QUESTION_MARK)) {
+            Expr trueStatement = equality();
+            consume(COLON, "expected : after expression");
+            Expr falseStatement = equality();
+
+            expr = new Expr.Condition(expr, trueStatement, falseStatement);
+        }
+
+        return expr;
+    }
 
     private Expr equality() {
         Expr expr = comparison();
