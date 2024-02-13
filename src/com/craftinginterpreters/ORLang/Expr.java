@@ -9,6 +9,7 @@ abstract class Expr {
 		R visitLiteralExpr (Literal expr);
 		R visitUnaryExpr (Unary expr);
 		R visitConditionExpr (Condition expr);
+		R visitNothingExpr (Nothing expr);
 	}
 	static class Binary extends Expr {
 		Binary(Expr left, Token operator, Expr right) {
@@ -83,6 +84,19 @@ abstract class Expr {
 		final Expr condition;
 		final Expr trueStatement;
 		final Expr falseStatement;
+	}
+
+	static class Nothing extends Expr {
+		Nothing(String nothing) {
+			this.nothing = nothing;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitNothingExpr(this);
+		}
+
+		final String nothing;
 	}
 
 

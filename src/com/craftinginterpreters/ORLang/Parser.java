@@ -1,8 +1,22 @@
 package com.craftinginterpreters.ORLang;
+import java.util.ArrayList;
 import java.util.List;
 import static com.craftinginterpreters.ORLang.TokenType.*;
 public class Parser {
     private static class ParseError extends RuntimeException {}
+
+    private static class UnhandledParseError extends RuntimeException {}
+    private static class HandledParseError {
+        HandledParseError(Token errorPoint, String message) {
+            this.errorPoint = errorPoint;
+            this.message = message;
+        }
+        final Token errorPoint;
+        final String message;
+    }
+
+    private List<HandledParseError> handledParseErrors = new ArrayList<>();
+
     private final List<Token> tokens;
     private int current = 0;
 
@@ -13,9 +27,13 @@ public class Parser {
     Expr parse() {
         try {
             return expression();
+//            for (HandledParseError errPdxn : this.handledParseErrors) {
+//                ORLang.error(errPdxn.errorPoint, errPdxn.message);
+//            }
         } catch (ParseError error) {
             return null;
         }
+
     }
 
     private Expr expression() {
@@ -51,6 +69,7 @@ public class Parser {
         Expr expr = comparison();
 
         while (match(BANG_EQUAL, EQUAL_EQUAL)) {
+            expr = checkForMissingExpression(expr, "Equality operators must have a left and right operand.");
             Token operator = previous();
             Expr right = comparison();
             expr = new Expr.Binary(expr, operator, right);
@@ -63,6 +82,7 @@ public class Parser {
         Expr expr = term();
 
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+            expr = checkForMissingExpression(expr, "Comparison operators must have a left and right operand.");
             Token operator = previous();
             Expr right = term();
             expr = new Expr.Binary(expr, operator, right);
@@ -75,6 +95,7 @@ public class Parser {
         Expr expr = factor();
 
         while (match(MINUS, PLUS)) {
+            expr = checkForMissingExpression(expr, "Binary operators must have a left and right operand.");
             Token operator = previous();
             Expr right = factor();
             expr = new Expr.Binary(expr, operator, right);
@@ -87,6 +108,7 @@ public class Parser {
         Expr expr = unary();
 
         while (match(SLASH, STAR)) {
+            expr = checkForMissingExpression(expr, "Binary operators must have a left and right operand.");
             Token operator = previous();
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
@@ -120,7 +142,8 @@ public class Parser {
             return new Expr.Grouping(expr);
         }
 
-        throw error(peek(), "Expect expression");
+//        throw error(peek(), "Expect expression");
+        return new Expr.Nothing("Nothing here.");
     }
 
     private boolean match(TokenType... types) {
@@ -159,6 +182,14 @@ public class Parser {
 
     private Token previous() {
         return tokens.get(current - 1);
+    }
+
+    private Expr checkForMissingExpression(Expr expr, String errorMessage) {
+        if (expr instanceof Expr.Nothing) {
+            HandledParseError error = new HandledParseError(previous(), errorMessage);
+            this.handledParseErrors.add(error);
+        }
+        return expr;
     }
 
     private ParseError error(Token token, String message) {

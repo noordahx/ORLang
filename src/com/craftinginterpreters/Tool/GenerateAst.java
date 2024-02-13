@@ -17,7 +17,8 @@ public class GenerateAst {
                 "Grouping   : Expr expression",
                 "Literal    : Object value",
                 "Unary      : Token operator, Expr right",
-                "Condition  : Expr condition, Expr trueStatement, Expr falseStatement"
+                "Condition  : Expr condition, Expr trueStatement, Expr falseStatement",
+                "Nothing    : String nothing"
         ));
     }
 
@@ -83,13 +84,13 @@ public class GenerateAst {
     private static void defineVisitor (
             PrintWriter writer, String baseName, List<String> types
     ) {
-        writer.println(String.format("\tinterface Visitor<R> {"));
+        writer.println("\tinterface Visitor<R> {");
 
         for (String type : types) {
             String typeName = type.split(":")[0].trim();
             writer.print(String.format("\t\tR visit%s%s (%s %s);\n", typeName, baseName, typeName, baseName.toLowerCase()));
         }
 
-        writer.println(String.format("\t}"));
+        writer.println("\t}");
     }
 }
