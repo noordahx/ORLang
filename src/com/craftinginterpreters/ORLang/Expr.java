@@ -10,6 +10,7 @@ abstract class Expr {
 		R visitUnaryExpr (Unary expr);
 		R visitConditionExpr (Condition expr);
 		R visitNothingExpr (Nothing expr);
+		R visitVariableExpr (Variable expr);
 	}
 	static class Binary extends Expr {
 		Binary(Expr left, Token operator, Expr right) {
@@ -97,6 +98,19 @@ abstract class Expr {
 		}
 
 		final String nothing;
+	}
+
+	static class Variable extends Expr {
+		Variable(Token name) {
+			this.name = name;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitVariableExpr(this);
+		}
+
+		final Token name;
 	}
 
 

@@ -18,7 +18,14 @@ public class GenerateAst {
                 "Literal    : Object value",
                 "Unary      : Token operator, Expr right",
                 "Condition  : Expr condition, Expr trueStatement, Expr falseStatement",
-                "Nothing    : String nothing"
+                "Nothing    : String nothing",
+                "Variable   : Token name"
+        ));
+
+        defineAst(outputDir, "Stmt", Arrays.asList(
+                "Expression : Expr expression",
+                "Print      : Expr expression",
+                "Var        : Token name, Expr initializer"
         ));
     }
 
@@ -37,7 +44,7 @@ public class GenerateAst {
         defineVisitor(writer, baseName, types);
 
         // The AST classes
-        for (String type: types) {
+        for (String type : types) {
             String className = type.split(":")[0].trim();
             String fields = type.split(":")[1].trim();
             defineType(writer, baseName, className, fields);
@@ -81,7 +88,7 @@ public class GenerateAst {
         writer.println("\t}\n");
     }
 
-    private static void defineVisitor (
+    private static void defineVisitor(
             PrintWriter writer, String baseName, List<String> types
     ) {
         writer.println("\tinterface Visitor<R> {");

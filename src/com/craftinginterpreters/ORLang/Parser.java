@@ -1,16 +1,23 @@
 package com.craftinginterpreters.ORLang;
+
 import java.util.ArrayList;
 import java.util.List;
-import static com.craftinginterpreters.ORLang.TokenType.*;
-public class Parser {
-    private static class ParseError extends RuntimeException {}
 
-    private static class UnhandledParseError extends RuntimeException {}
+import static com.craftinginterpreters.ORLang.TokenType.*;
+
+public class Parser {
+    private static class ParseError extends RuntimeException {
+    }
+
+    private static class UnhandledParseError extends RuntimeException {
+    }
+
     private static class HandledParseError {
         HandledParseError(Token errorPoint, String message) {
             this.errorPoint = errorPoint;
             this.message = message;
         }
+
         final Token errorPoint;
         final String message;
     }
@@ -24,25 +31,60 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            return expression();
-//            for (HandledParseError errPdxn : this.handledParseErrors) {
-//                ORLang.error(errPdxn.errorPoint, errPdxn.message);
-//            }
-        } catch (ParseError error) {
-            return null;
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!isAtEnd()) {
+            statements.add(declaration());
         }
 
+        return statements;
+
+        /*try {*//*
+            return expression();
+            for (HandledParseError errPdxn : this.handledParseErrors) {
+                ORLang.error(errPdxn.errorPoint, errPdxn.message);
+            }
+        } catch (ParseError error) {
+            return null;
+        }*/
     }
 
     private Expr expression() {
         return comma();
     }
 
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) return varDeclaration();
+            return statement;
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
+    }
+
+    private Stmt statement() {
+        if (match(PRINT)) return printStatement();
+
+        return expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
     private Expr comma() {
         Expr expr = ternary();
-        while(match(COMMA)) {
+        while (match(COMMA)) {
             Token operator = previous();
             Expr right = ternary();
 

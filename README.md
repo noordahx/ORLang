@@ -7,7 +7,18 @@
 
 -- Tree-walk interpreter directly executing AST --
 
-Parser's expression grammar:
+Parser's grammar rules:
+program     -> declaration* EOF ;
+
+declaration -> varDecl | statement ;
+
+varDecl     -> "var" IDENTIFIER ("=" expression)? ";" ;
+
+statement   -> exprStmt | printStmt ;
+
+exprStmt    -> expresssion ";" ;
+printStmt   -> "print" expression ";" ;
+
 expression  -> comma ;
 comman      -> ternary ( ( "," ) ternary )* ;
 ternary     -> equality ( "?" expression ":" expression )* ;
@@ -17,9 +28,12 @@ term        -> factor ( ( "-" | "+" ) factor )* ;
 factor      -> unary ( ( "/" | "*" ) factor )* ;
 unary       -> ( "!" | "-" ) unary | primary ;
 primary     -> NUMBER | STRING | "true" | "false" | "nil"
-            | "(" expression ")" ;
+            | "(" expression ")"
+            | IDENTIFIER ;
 
-where   * - while loop
+
+where   * - multiple
+        ? - at most once
         
 ``` 
 

@@ -1,10 +1,15 @@
 package com.craftinginterpreters.ORLang;
 
-class Interpreter implements Expr.Visitor<Object> {
-    void interpret(Expr expression) {
+import java.util.List;
+
+class Interpreter implements Expr.Visitor<Object>,
+        Stmt.Visitor<Void> {
+
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError error) {
             ORLang.runtimeError(error);
         }
@@ -93,12 +98,12 @@ class Interpreter implements Expr.Visitor<Object> {
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
-        if (left instanceof  Double && right instanceof Double) return;
+        if (left instanceof Double && right instanceof Double) return;
         throw new RuntimeError(operator, "Operands must be numbers");
     }
 
     private void checkZeroDivision(Token operator, Object left, Object right) {
-        if (right instanceof Double && (double)right != 0) return;
+        if (right instanceof Double && (double) right != 0) return;
         throw new RuntimeError(operator, "Zero division is not supported");
     }
 
@@ -144,9 +149,35 @@ class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
 
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return null;
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
 
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
 
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        return null;
+    }
 }
