@@ -55,11 +55,6 @@ public class ORLang {
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.parse();
 
-        // For now, just print tokens.
-        /*for (Token token : tokens) {
-            System.out.println(token);
-        }*/
-
         if (hadError) return;
 
         // System.out.println(new AstPrinter().print(expression));

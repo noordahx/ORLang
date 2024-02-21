@@ -9,9 +9,6 @@ public class Parser {
     private static class ParseError extends RuntimeException {
     }
 
-    /*private static class UnhandledParseError extends RuntimeException {
-    }*/
-
     private static class HandledParseError {
         HandledParseError(Token errorPoint, String message) {
             this.errorPoint = errorPoint;
@@ -39,20 +36,10 @@ public class Parser {
         }
 
         return statements;
-
-        /*try {*//*
-            return expression();
-            for (HandledParseError errPdxn : this.handledParseErrors) {
-                ORLang.error(errPdxn.errorPoint, errPdxn.message);
-            }
-        } catch (ParseError error) {
-            return null;
-        }*/
     }
 
     private Expr expression() {
         return assignment();
-//        return comma();
     }
 
     private Stmt declaration() {
@@ -67,6 +54,7 @@ public class Parser {
 
     private Stmt statement() {
         if (match(PRINT)) return printStatement();
+        if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
     }
@@ -95,14 +83,24 @@ public class Parser {
         return new Stmt.Expression(expr);
     }
 
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expect '}' after block statement.");
+        return statements;
+    }
+
     private Expr assignment() {
-        Expr expr = comma();
+        Expr expr = equality();
 
         if (match(EQUAL)) {
             Token equals = previous();
             Expr value = assignment();
             if (expr instanceof Expr.Variable) {
-                Token name = ((Expr.Variable)expr).name;
+                Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
             }
 
@@ -217,7 +215,6 @@ public class Parser {
             return new Expr.Grouping(expr);
         }
 
-//        throw error(peek(), "Expect expression");
         return new Expr.Nothing("Nothing here.");
     }
 
