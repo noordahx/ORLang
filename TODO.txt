@@ -1,5 +1,5 @@
 Chapter 6, exercise 3 (add error-skipping and errors for binary expresssions)
-
+Chapter 8, exercise 1, 2
 For experiment TODO:
 * Implicit variable declaration (Interpreter.java visitAssignExpr can create new variable in case if it fails to find an expr.name in variables map)
 * add proper support for comma and ternary expressions

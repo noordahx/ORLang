@@ -27,6 +27,11 @@ class AstPrinter implements Expr.Visitor<String> {
     }
 
     @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return null;
+    }
+
+    @Override
     public String visitConditionExpr(Expr.Condition expr) {
         return condition(expr.condition, expr.trueStatement, expr.falseStatement);
     }
