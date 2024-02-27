@@ -6,6 +6,8 @@ import java.util.Map;
 public class Environment {
     final Environment enclosing;
 
+    private final Map<String, Object> values = new HashMap<>();
+
     Environment() {
         enclosing = null;
     }
@@ -13,8 +15,6 @@ public class Environment {
     Environment(Environment enclosing) {
         this.enclosing = enclosing;
     }
-
-    private final Map<String, Object> values = new HashMap<>();
 
     void define(String name, Object value) {
         values.put(name, value);

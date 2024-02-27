@@ -1,4 +1,3 @@
-```agsl
 --------------------------------------------------
 
 --- ORLang - inspired by Robert Nystrom's jLox ---
@@ -35,16 +34,24 @@ declaration -> varDecl | statement ;
 varDecl     -> "var" IDENTIFIER ("=" expression)? ";" ;
 
 statement   -> exprStmt
+            | forStmt
             | ifStmt 
             | printStmt
+            | whileStmt
             | block ;
 
+forStmt     -> "for" "(" ( varDecl | exprStmt | ";")
+                expression? ";"
+                expression? ")" statement;            
+
+whileStmt   -> "while" "(" expression ")" statement ;
+
 ifStmt      -> "if" "(" expression ")" statement
-                ( "else" statment )? ;
+                ( "else" statement )? ;
 
 block       -> "{" declaration "}" ;
 
-exprStmt    -> expresssion ";" ;
+exprStmt    -> expression ";" ;
 printStmt   -> "print" expression ";" ;
 
 expression  -> assignment ;
@@ -71,8 +78,3 @@ primary     -> NUMBER | STRING | "true" | "false" | "nil"
 
 where   * - multiple
         ? - at most once
-        
-``` 
-
-
-

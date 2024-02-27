@@ -123,8 +123,10 @@ class Interpreter implements Expr.Visitor<Object>,
     }
 
     private boolean isTruthy(Object object) {
-        if (object == null) return false;
-        if (object instanceof Boolean) return (boolean) object;
+        if (object == null)
+            return false;
+        if (object instanceof Boolean)
+            return (boolean) object;
         return true;
     }
 
@@ -181,6 +183,7 @@ class Interpreter implements Expr.Visitor<Object>,
         Environment previous = this.environment;
         try {
             this.environment = environment;
+
             for (Stmt statement : statements) {
                 execute(statement);
             }
@@ -226,6 +229,15 @@ class Interpreter implements Expr.Visitor<Object>,
         }
 
         environment.define(stmt.name.lexeme, value);
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        System.out.println(stmt.body.toString());
+        while (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.body);
+        }
         return null;
     }
 
