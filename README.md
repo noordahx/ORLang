@@ -1,3 +1,4 @@
+```
 --------------------------------------------------
 
 --- ORLang - inspired by Robert Nystrom's jLox ---
@@ -78,3 +79,4 @@ primary     -> NUMBER | STRING | "true" | "false" | "nil"
 
 where   * - multiple
         ? - at most once
+```
