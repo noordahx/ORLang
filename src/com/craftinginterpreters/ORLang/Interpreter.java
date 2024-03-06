@@ -1,10 +1,11 @@
 package com.craftinginterpreters.ORLang;
 
 import java.util.List;
-
+import java.util.ArrayList;
 class Interpreter implements Expr.Visitor<Object>,
         Stmt.Visitor<Void> {
 
+    private static class BreakException extends RuntimeException {}
     private Environment environment = new Environment();
 
     void interpret(List<Stmt> statements) {
@@ -68,6 +69,23 @@ class Interpreter implements Expr.Visitor<Object>,
                 return (double) left * (double) right;
         }
         return null;
+    }
+
+    @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        Object callee = evaluate(expr.callee);
+
+        List<Object> arguments = new ArrayList<>();
+        for (Expr argument : expr.arguments) {
+            arguments.add(evaluate(argument));
+        }
+
+        if (!(callee instanceof ORCallable)) {
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+        }
+
+        ORCallable function = (ORCallable) callee;
+        return function.call(this, arguments);
     }
 
     @Override
@@ -234,9 +252,12 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
-        System.out.println(stmt.body.toString());
-        while (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body);
+        try {
+            while (isTruthy(evaluate(stmt.condition))) {
+                execute(stmt.body);
+            }
+        } catch (BreakException ex) {
+            // Do noting.
         }
         return null;
     }
@@ -246,5 +267,10 @@ class Interpreter implements Expr.Visitor<Object>,
         Object value = evaluate(expr.value);
         environment.assign(expr.name, value);
         return value;
+    }
+
+    @Override
+    public Void visitBreakStmt(Stmt.Break stmt) {
+        throw new BreakException();
     }
 }

@@ -71,7 +71,9 @@ equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        -> factor ( ( "-" | "+" ) factor )* ;
 factor      -> unary ( ( "/" | "*" ) factor )* ;
-unary       -> ( "!" | "-" ) unary | primary ;
+unary       -> ( "!" | "-" ) unary | call ;
+call        -> primary ( "(" arguments? ")" ) )* ;
+arguments   -> expression ( "," expression )* ;
 primary     -> NUMBER | STRING | "true" | "false" | "nil"
             | "(" expression ")"
             | IDENTIFIER ;
