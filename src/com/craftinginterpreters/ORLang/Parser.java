@@ -48,6 +48,7 @@ public class Parser {
     private Stmt declaration() {
         try {
             if (match(VAR)) return varDeclaration();
+//            if (match(FUN)) return function("function");
             return statement();
         } catch (ParseError error) {
             synchronize();
@@ -172,6 +173,8 @@ public class Parser {
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
     }
+
+//    private Stmt.Function function()
 
     private List<Stmt> block() {
         List<Stmt> statements = new ArrayList<>();

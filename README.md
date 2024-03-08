@@ -30,7 +30,12 @@ ORLang java implementation (jlox):
 Parser's grammar rules:
 program     -> declaration* EOF ;
 
-declaration -> varDecl | statement ;
+declaration -> funDecl 
+            | varDecl 
+            | statement ;
+
+funDecl     -> "fun" function;
+function    -> IDENTIFIER "(" parameters? ")" block ;
 
 varDecl     -> "var" IDENTIFIER ("=" expression)? ";" ;
 
@@ -66,7 +71,7 @@ logic_and   -> equality ( "and" equality )* ;
 // logic_and   -> comma ( "and" comma )* ;
 // comma       -> ternary ( ( "," ) ternary )* ;
 // ternary     -> equality ( "?" expression ":" expression )* ;
-
+ 
 equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        -> factor ( ( "-" | "+" ) factor )* ;
