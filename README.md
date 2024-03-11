@@ -50,6 +50,8 @@ forStmt     -> "for" "(" ( varDecl | exprStmt | ";")
                 expression? ";"
                 expression? ")" statement;            
 
+returnStmt  -> "return" expression? ";";
+
 whileStmt   -> "while" "(" expression ")" statement ;
 
 ifStmt      -> "if" "(" expression ")" statement
