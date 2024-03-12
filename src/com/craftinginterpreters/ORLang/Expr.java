@@ -14,6 +14,7 @@ abstract class Expr {
 		R visitConditionExpr (Condition expr);
 		R visitNothingExpr (Nothing expr);
 		R visitVariableExpr (Variable expr);
+		R visitFunctionExpr (Function expr);
 	}
 	static class Assign extends Expr {
 		Assign(Token name, Expr value) {
@@ -163,6 +164,21 @@ abstract class Expr {
 		}
 
 		final Token name;
+	}
+
+	static class Function extends Expr {
+		Function(List<Token> parameters, List<Stmt> body) {
+			this.parameters = parameters;
+			this.body = body;
+		}
+
+		@Override
+		<R> R accept(Visitor<R> visitor) {
+			return visitor.visitFunctionExpr(this);
+		}
+
+		final List<Token> parameters;
+		final List<Stmt> body;
 	}
 
 

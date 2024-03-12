@@ -214,6 +214,11 @@ class Interpreter implements Expr.Visitor<Object>,
         return environment.get(expr.name);
     }
 
+    @Override
+    public Object visitFunctionExpr(Expr.Function expr) {
+        return new ORFunction(null, expr, environment);
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
@@ -249,8 +254,8 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        ORFunction function = new ORFunction(stmt);
-        environment.define(stmt.name.lexeme, function);
+        String fnName = stmt.name.lexeme;
+        environment.define(fnName, new ORFunction(fnName, stmt.function, environment));
         return null;
     }
 

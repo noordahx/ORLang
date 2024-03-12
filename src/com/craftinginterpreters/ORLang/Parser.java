@@ -47,7 +47,10 @@ public class Parser {
 
     private Stmt declaration() {
         try {
-            if (match(FUN)) return function("function");
+            if (check(FUN) && checkNext(IDENTIFIER)) {
+                consume(FUN, null);
+                return function("function");
+            }
             if (match(VAR)) return varDeclaration();
             return statement();
         } catch (ParseError error) {
@@ -188,22 +191,25 @@ public class Parser {
 
     private Stmt.Function function(String kind) {
         Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+        return new Stmt.Function(name, functionBody(kind));
+    }
+
+    private Expr.Function functionBody(String kind) {
         consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
         List<Token> parameters = new ArrayList<>();
         if (!check(RIGHT_PAREN)) {
             do {
-                if (parameters.size() >= 255) {
-                    error(peek(), "Can't have more than 255 parameters.");
+                if (parameters.size() >= 8) {
+                    error(peek(), "Can't have more than 8 parameters.");
                 }
-                parameters.add(
-                        consume(IDENTIFIER, "Expect parameter name."));
+
+                parameters.add(consume(IDENTIFIER, "Expcet parameter name."));
             } while (match(COMMA));
         }
         consume(RIGHT_PAREN, "Expect ')' after parameters.");
-
         consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
         List<Stmt> body = block();
-        return new Stmt.Function(name, parameters, body);
+        return new Expr.Function(parameters, body);
     }
 
     private List<Stmt> block() {
@@ -373,6 +379,7 @@ public class Parser {
     }
 
     private Expr primary() {
+        if (match(FUN)) return functionBody("function");
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
@@ -413,6 +420,12 @@ public class Parser {
     private boolean check(TokenType type) {
         if (isAtEnd()) return false;
         return peek().type == type;
+    }
+
+    private boolean checkNext(TokenType tokenType) {
+        if (isAtEnd()) return false;
+        if (tokens.get(current + 1).type == EOF) return false;
+        return tokens.get(current + 1).type == tokenType;
     }
 
     private Token advance() {
