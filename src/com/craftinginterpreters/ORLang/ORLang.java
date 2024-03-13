@@ -57,7 +57,12 @@ public class ORLang {
 
         if (hadError) return;
 
-        // System.out.println(new AstPrinter().print(expression));
+        Resolver resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+
+        // Stop if there was a resolution error.
+        if (hadError) return;
+
         interpreter.interpret(statements);
     }
 
