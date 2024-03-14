@@ -2,31 +2,45 @@ package com.craftinginterpreters.ORLang;
 import java.util.List;
 public class ORFunction implements ORCallable {
     private final String name;
-    private final Expr.Function declaration;
+    private final Stmt.Function declaration;
     private final Environment closure;
-    public ORFunction(String name, Expr.Function declaration, Environment closure)
+    private final Expr.Function exprFunction;
+
+    public ORFunction(Stmt.Function declaration, Environment closure)
     {
-        this.name = name;
+        if (declaration.name != null) {
+            this.name = declaration.name.lexeme;
+        } else {
+            this.name = null;
+        }
         this.declaration = declaration;
+        this.exprFunction = declaration.function;
         this.closure = closure;
     }
 
+    ORFunction bind(ORInstance instance) {
+        Environment environment = new Environment(closure);
+        environment.define("this", instance);
+        return new ORFunction(declaration, environment);
+    }
+
+
     @Override
     public int arity() {
-        return declaration.parameters.size();
+        return declaration.function.parameters.size();
     }
 
     @Override
     public Object call(Interpreter interpreter,
                        List<Object> arguments) {
         Environment environment = new Environment(interpreter.globals);
-        for (int i = 0; i < declaration.parameters.size(); i++) {
-            environment.define(declaration.parameters.get(i).lexeme,
+        for (int i = 0; i < exprFunction.parameters.size(); i++) {
+            environment.define(exprFunction.parameters.get(i).lexeme,
                     arguments.get(i));
         }
 
         try {
-            interpreter.executeBlock(declaration.body, environment);
+            interpreter.executeBlock(exprFunction.body, environment);
         } catch (Return returnValue) {
             return returnValue.value;
         }

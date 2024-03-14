@@ -1,0 +1,15 @@
+class Bacon {
+    eat() {
+        print "Crunch crunch crunch";
+    }
+    throw(fn, a) {
+        print fn;
+        fn(a);
+    }
+}
+
+
+Bacon().eat(); // Crunch crunch crunch
+Bacon().throw(fun (b) {
+    print b;
+}, "hello");

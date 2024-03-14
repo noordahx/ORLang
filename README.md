@@ -30,12 +30,14 @@ ORLang java implementation (jlox):
 Parser's grammar rules:
 program     -> declaration* EOF ;
 
-declaration -> funDecl 
+declaration -> classDecl  
+            | funDecl 
             | varDecl 
             | statement ;
 
+classDecl   -> "class" IDENTIFIER "{" function* "}" ;
+
 funDecl     -> "fun" function;
-function    -> IDENTIFIER "(" parameters? ")" block ;
 
 varDecl     -> "var" IDENTIFIER ("=" expression)? ";" ;
 
@@ -45,6 +47,10 @@ statement   -> exprStmt
             | printStmt
             | whileStmt
             | block ;
+
+function    -> IDENTIFIER "(" parameters? ")" block ;
+
+parameters  -> IDENTIFIER ( "," IDENTIFIER )* ;
 
 forStmt     -> "for" "(" ( varDecl | exprStmt | ";")
                 expression? ";"
@@ -60,26 +66,25 @@ ifStmt      -> "if" "(" expression ")" statement
 block       -> "{" declaration "}" ;
 
 exprStmt    -> expression ";" ;
+
 printStmt   -> "print" expression ";" ;
 
 expression  -> assignment ;
 
-assignment  -> IDENTIFIER "=" assignment 
+assignment  -> ( call "." ) ? IDENTIFIER "=" assignment 
             | logic_or ;
+
 
 logic_or    -> logic_and ( "or" logic_and )* ;
 logic_and   -> equality ( "and" equality )* ;
 
-// logic_and   -> comma ( "and" comma )* ;
-// comma       -> ternary ( ( "," ) ternary )* ;
-// ternary     -> equality ( "?" expression ":" expression )* ;
  
 equality    -> comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        -> factor ( ( "-" | "+" ) factor )* ;
 factor      -> unary ( ( "/" | "*" ) factor )* ;
 unary       -> ( "!" | "-" ) unary | call ;
-call        -> primary ( "(" arguments? ")" ) )* ;
+call        -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments   -> expression ( "," expression )* ;
 primary     -> NUMBER | STRING | "true" | "false" | "nil"
             | "(" expression ")"
@@ -88,4 +93,11 @@ primary     -> NUMBER | STRING | "true" | "false" | "nil"
 
 where   * - multiple
         ? - at most once
+
+
+not in use:
+
+// logic_and   -> comma ( "and" comma )* ;
+// comma       -> ternary ( ( "," ) ternary )* ;
+// ternary     -> equality ( "?" expression ":" expression )* ;
 ```

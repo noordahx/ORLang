@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 class Interpreter implements Expr.Visitor<Object>,
         Stmt.Visitor<Void> {
@@ -12,7 +13,8 @@ class Interpreter implements Expr.Visitor<Object>,
 
     final Environment globals = new Environment();
     private Environment environment = globals;
-    private final Map<Expr, Integer> locals = new HashMap<>();
+    public final Map<Expr, Integer> locals = new HashMap<>();
+
     Interpreter() {
         globals.define("clock", new ORCallable() {
             @Override
@@ -22,7 +24,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
-                return (double)System.currentTimeMillis() / 1000.0;
+                return (double) System.currentTimeMillis() / 1000.0;
             }
 
             @Override
@@ -116,6 +118,16 @@ class Interpreter implements Expr.Visitor<Object>,
     }
 
     @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        Object object = evaluate(expr.object);
+        if (object instanceof ORInstance) {
+            return ((ORInstance) object).get(expr.name);
+        }
+
+        throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
     }
@@ -135,6 +147,23 @@ class Interpreter implements Expr.Visitor<Object>,
         }
 
         return evaluate(expr.right);
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set expr) {
+        Object object = evaluate(expr.object);
+        if (!(object instanceof ORInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have fields.");
+        }
+
+        Object value = evaluate(expr.value);
+        ((ORInstance)object).set(expr.name, value);
+        return value;
+    }
+
+    @Override
+    public Object visitThisExpr(Expr.This expr) {
+        return lookUpVariable(expr.keyword, expr);
     }
 
     @Override
@@ -217,8 +246,19 @@ class Interpreter implements Expr.Visitor<Object>,
     }
 
     private Object lookUpVariable(Token name, Expr expr) {
+        for (Map.Entry<String, Object> entry : environment.values.entrySet()) {
+            System.out.println(entry.getKey() + " : " + entry.getValue());
+        }
         Integer distance = locals.get(expr);
+
         if (distance != null) {
+            if (name.lexeme.equals("this")) {
+                System.out.println(name.lexeme);
+                for (Map.Entry<String, Object> entry : environment.values.entrySet()) {
+                    System.out.println(entry.getKey() + " : " + entry.getValue());
+                }
+                return environment.get(name);
+            }
             return environment.getAt(distance, name.lexeme);
         } else {
             return globals.get(name);
@@ -227,7 +267,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitFunctionExpr(Expr.Function expr) {
-        return new ORFunction(null, expr, environment);
+        return new ORFunction(new Stmt.Function(null, expr), environment);
     }
 
     private Object evaluate(Expr expr) {
@@ -262,6 +302,20 @@ class Interpreter implements Expr.Visitor<Object>,
     }
 
     @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        environment.define(stmt.name.lexeme, null);
+
+        Map<String, ORFunction> methods = new HashMap<>();
+        for (Stmt.Function method : stmt.methods) {
+            ORFunction function = new ORFunction(method, environment);
+            methods.put(method.name.lexeme, function);
+        }
+        ORClass klass = new ORClass(stmt.name.lexeme, methods);
+        environment.assign(stmt.name, klass);
+        return null;
+    }
+
+    @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
         return null;
@@ -269,8 +323,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        String fnName = stmt.name.lexeme;
-        environment.define(fnName, new ORFunction(fnName, stmt.function, environment));
+        environment.define(stmt.name.lexeme, new ORFunction(stmt, environment));
         return null;
     }
 

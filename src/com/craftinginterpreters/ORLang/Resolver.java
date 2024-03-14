@@ -9,13 +9,15 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String, Variable>> scopes = new Stack<>();
     private FunctionType currentFunction = FunctionType.NONE;
+
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
     }
 
     private enum FunctionType {
         NONE,
-        FUNCTION
+        FUNCTION,
+        METHOD
     }
 
     private static class Variable {
@@ -44,6 +46,23 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitBreakStmt(Stmt.Break stmt) {
+        return null;
+    }
+
+    @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        declare(stmt.name);
+        define(stmt.name);
+        beginScope();
+        // Define as READ state to keep avoid compile time not-used variable error
+        scopes.peek().put("this", new Variable(stmt.name, VariableState.READ));
+        for (Stmt.Function method : stmt.methods) {
+            FunctionType declaration = FunctionType.METHOD;
+            resolveFunction(method, declaration);
+        }
+
+        endScope();
+
         return null;
     }
 
@@ -128,6 +147,12 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitGetExpr(Expr.Get expr) {
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
     public Void visitGroupingExpr(Expr.Grouping expr) {
         resolve(expr.expression);
         return null;
@@ -142,6 +167,19 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitLogicalExpr(Expr.Logical expr) {
         resolve(expr.left);
         resolve(expr.right);
+        return null;
+    }
+
+    @Override
+    public Void visitSetExpr(Expr.Set expr) {
+        resolve(expr.value);
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
+    public Void visitThisExpr(Expr.This expr) {
+        resolveLocal(expr, expr.keyword, false);
         return null;
     }
 
@@ -164,8 +202,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitVariableExpr(Expr.Variable expr) {
         if (!scopes.isEmpty() &&
-            scopes.peek().containsKey(expr.name.lexeme) &&
-            scopes.peek().get(expr.name.lexeme).state == VariableState.DECLARED) {
+                scopes.peek().containsKey(expr.name.lexeme) &&
+                scopes.peek().get(expr.name.lexeme).state == VariableState.DECLARED) {
 
             ORLang.error(expr.name, "Can't read local variable in its own initializer.");
         }
@@ -175,7 +213,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitFunctionExpr(Expr.Function expr) {
-        resolveFunction(expr, FunctionType.FUNCTION);
+        resolveFunction(new Stmt.Function(null, expr), FunctionType.FUNCTION);
         return null;
     }
 
@@ -195,30 +233,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private void resolveFunction(Stmt.Function function, FunctionType type) {
         FunctionType enclosingFunction = currentFunction;
+        Expr.Function exprFunction = function.function;
         currentFunction = type;
         beginScope();
-        for (Token param : function.function.parameters) {
+        for (Token param : exprFunction.parameters) {
             declare(param);
             define(param);
         }
-        resolve(function.function.body);
+        resolve(exprFunction.body);
         endScope();
         currentFunction = enclosingFunction;
     }
-
-    private void resolveFunction(Expr.Function function, FunctionType type) {
-        FunctionType enclosingFunction = currentFunction;
-        currentFunction = type;
-        beginScope();
-        for (Token param : function.parameters) {
-            declare(param);
-            define(param);
-        }
-        resolve(function.body);
-        endScope();
-        currentFunction = enclosingFunction;
-    }
-
 
     private void beginScope() {
         scopes.push(new HashMap<String, Variable>());

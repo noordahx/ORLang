@@ -1,0 +1,11 @@
+class IceCream {
+    serveOn() {
+        return "Cone";
+    }
+}
+
+print IceCream; // IceCream
+
+class Bagel {}
+var bagel = Bagel();
+print bagel; // "Bagel instance"

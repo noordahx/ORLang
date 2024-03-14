@@ -6,7 +6,7 @@ import java.util.Map;
 public class Environment {
     final Environment enclosing;
 
-    private final Map<String, Object> values = new HashMap<>();
+    final Map<String, Object> values = new HashMap<>();
 
     Environment() {
         enclosing = null;
@@ -33,7 +33,7 @@ public class Environment {
     }
 
     void assignAt(int distance, Token name, Object value) {
-        ancestor(distance).values.put(name.lexeme, values);
+        ancestor(distance).values.put(name.lexeme, value);
     }
 
     Object get(Token name) {
