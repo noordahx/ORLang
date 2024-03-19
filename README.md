@@ -35,7 +35,7 @@ declaration -> classDecl
             | varDecl 
             | statement ;
 
-classDecl   -> "class" IDENTIFIER "{" function* "}" ;
+classDecl   -> "class" IDENTIFIER ( "<" IDENTIFIER ) ? "{" function* "}" ;
 
 funDecl     -> "fun" function;
 
@@ -88,16 +88,17 @@ call        -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments   -> expression ( "," expression )* ;
 primary     -> NUMBER | STRING | "true" | "false" | "nil"
             | "(" expression ")"
-            | IDENTIFIER ;
+            | IDENTIFIER 
+            | "super" "." IDENTIFIER ;
 
 
 where   * - multiple
-        ? - at most once
+        ? - at most once i.e. 0 or 1
 
 
 not in use:
 
-// logic_and   -> comma ( "and" comma )* ;
-// comma       -> ternary ( ( "," ) ternary )* ;
-// ternary     -> equality ( "?" expression ":" expression )* ;
+logic_and   -> comma ( "and" comma )* ;
+comma       -> ternary ( ( "," ) ternary )* ;
+ternary     -> equality ( "?" expression ":" expression )* ;
 ```

@@ -114,7 +114,11 @@ class Interpreter implements Expr.Visitor<Object>,
         if (arguments.size() != function.arity()) {
             throw new RuntimeError(expr.paren, String.format("Expected %d arguments but got %d.", function.arity(), arguments.size()));
         }
-        return function.call(this, arguments);
+        try {
+            return function.call(this, arguments);
+        } catch (NativeError e) {
+            throw new RuntimeError(expr.paren, e.getMessage());
+        }
     }
 
     @Override
@@ -159,6 +163,23 @@ class Interpreter implements Expr.Visitor<Object>,
         Object value = evaluate(expr.value);
         ((ORInstance)object).set(expr.name, value);
         return value;
+    }
+
+    @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        int distance = locals.get(expr);
+        ORClass superclass = (ORClass) environment.getAt(distance, "super");
+
+        ORInstance object = (ORInstance) environment.getAt(
+                distance - 1, "this");
+
+        ORFunction method = superclass.findMethod(object, expr.method.lexeme);
+        if (method == null) {
+            throw new RuntimeError(expr.method,
+                    "Undefined property '" + expr.method.lexeme + "'.");
+        }
+
+        return method;
     }
 
     @Override
@@ -246,19 +267,8 @@ class Interpreter implements Expr.Visitor<Object>,
     }
 
     private Object lookUpVariable(Token name, Expr expr) {
-        for (Map.Entry<String, Object> entry : environment.values.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
-        }
         Integer distance = locals.get(expr);
-
         if (distance != null) {
-            if (name.lexeme.equals("this")) {
-                System.out.println(name.lexeme);
-                for (Map.Entry<String, Object> entry : environment.values.entrySet()) {
-                    System.out.println(entry.getKey() + " : " + entry.getValue());
-                }
-                return environment.get(name);
-            }
             return environment.getAt(distance, name.lexeme);
         } else {
             return globals.get(name);
@@ -267,7 +277,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitFunctionExpr(Expr.Function expr) {
-        return new ORFunction(new Stmt.Function(null, expr), environment);
+        return new ORFunction(null, expr, environment, false);
     }
 
     private Object evaluate(Expr expr) {
@@ -304,13 +314,32 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
         environment.define(stmt.name.lexeme, null);
+        Object superclass = null;
+        if (stmt.superclass != null) {
+            superclass = evaluate(stmt.superclass);
+            if (!(superclass instanceof ORClass)) {
+                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class.");
+            }
+
+            environment = new Environment(environment);
+            environment.define("super", superclass);
+        }
 
         Map<String, ORFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
-            ORFunction function = new ORFunction(method, environment);
+            ORFunction function = new ORFunction(
+                    method.name.lexeme,
+                    method.function,
+                    environment,
+                    method.name.lexeme.equals("init"));
             methods.put(method.name.lexeme, function);
         }
-        ORClass klass = new ORClass(stmt.name.lexeme, methods);
+        ORClass klass = new ORClass(stmt.name.lexeme, (ORClass) superclass, methods);
+
+        if (superclass != null) {
+            environment = environment.enclosing;
+        }
+
         environment.assign(stmt.name, klass);
         return null;
     }
@@ -323,7 +352,9 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        environment.define(stmt.name.lexeme, new ORFunction(stmt, environment));
+        ORFunction function = new ORFunction(
+                stmt.name.lexeme, stmt.function, environment, false);
+        environment.define(stmt.name.lexeme, function);
         return null;
     }
 

@@ -1,50 +1,45 @@
 package com.craftinginterpreters.ORLang;
 import java.util.List;
-public class ORFunction implements ORCallable {
+public class  ORFunction implements ORCallable {
     private final String name;
-    private final Stmt.Function declaration;
+    private final Expr.Function function;
     private final Environment closure;
-    private final Expr.Function exprFunction;
+    private final boolean isInitializer;
 
-    public ORFunction(Stmt.Function declaration, Environment closure)
+    public ORFunction(String name, Expr.Function function, Environment closure, boolean isInitializer)
     {
-        if (declaration.name != null) {
-            this.name = declaration.name.lexeme;
-        } else {
-            this.name = null;
-        }
-        this.declaration = declaration;
-        this.exprFunction = declaration.function;
+        this.name = name;
+        this.function = function;
         this.closure = closure;
+        this.isInitializer = isInitializer;
     }
 
     ORFunction bind(ORInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
-        return new ORFunction(declaration, environment);
+        return new ORFunction(name, function, environment, isInitializer);
     }
 
 
     @Override
     public int arity() {
-        return declaration.function.parameters.size();
+        return function.parameters.size();
     }
 
     @Override
-    public Object call(Interpreter interpreter,
-                       List<Object> arguments) {
-        Environment environment = new Environment(interpreter.globals);
-        for (int i = 0; i < exprFunction.parameters.size(); i++) {
-            environment.define(exprFunction.parameters.get(i).lexeme,
+    public Object call(Interpreter interpreter, List<Object> arguments) {
+        Environment environment = new Environment(closure);
+        for (int i = 0; i < function.parameters.size(); i++) {
+            environment.define(function.parameters.get(i).lexeme,
                     arguments.get(i));
         }
 
         try {
-            interpreter.executeBlock(exprFunction.body, environment);
+            interpreter.executeBlock(function.body, environment);
         } catch (Return returnValue) {
             return returnValue.value;
         }
-
+        if (isInitializer) return closure.getAt(0, "this");
         return null;
     }
 

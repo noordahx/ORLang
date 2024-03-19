@@ -17,8 +17,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private enum FunctionType {
         NONE,
         FUNCTION,
+        INITIALIZER,
         METHOD
     }
+
+    private enum ClassType {
+        NONE,
+        CLASS,
+        SUBCLASS
+    }
+
+    private ClassType currentClass = ClassType.NONE;
 
     private static class Variable {
         final Token name;
@@ -51,18 +60,44 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
+        ClassType enclosingClass = currentClass;
+        currentClass = ClassType.CLASS;
+
         declare(stmt.name);
         define(stmt.name);
+
+        if (stmt.superclass != null && stmt.name.lexeme.equals(stmt.superclass.name.lexeme)) {
+            ORLang.error(stmt.superclass.name, "A class can't inherit from itself");
+        }
+
+        if (stmt.superclass != null) {
+            currentClass = ClassType.SUBCLASS;
+            resolve(stmt.superclass);
+        }
+
+        if (stmt.superclass != null) {
+            beginScope();
+            scopes.peek().put("super", new Variable(null, VariableState.READ));
+        }
+
         beginScope();
         // Define as READ state to keep avoid compile time not-used variable error
-        scopes.peek().put("this", new Variable(stmt.name, VariableState.READ));
+        scopes.peek().put("this", new Variable(null, VariableState.READ));
         for (Stmt.Function method : stmt.methods) {
             FunctionType declaration = FunctionType.METHOD;
-            resolveFunction(method, declaration);
+            if (method.name.lexeme.equals("init")) {
+                declaration = FunctionType.INITIALIZER;
+            }
+            resolveFunction(method.function, declaration);
         }
 
         endScope();
 
+        if (stmt.superclass != null) {
+            endScope();
+        }
+
+        currentClass = enclosingClass;
         return null;
     }
 
@@ -76,8 +111,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitFunctionStmt(Stmt.Function stmt) {
         declare(stmt.name);
         define(stmt.name);
-
-        resolveFunction(stmt, FunctionType.FUNCTION);
+        resolve(stmt.function);
+//        resolveFunction(stmt, FunctionType.FUNCTION);
         return null;
     }
 
@@ -101,6 +136,9 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             ORLang.error(stmt.keyword, "Can't return from top-level code.");
         }
         if (stmt.value != null) {
+            if (currentFunction == FunctionType.INITIALIZER) {
+                ORLang.error(stmt.keyword, "Can't return a value from an initializer.");
+            }
             resolve(stmt.value);
         }
         return null;
@@ -126,7 +164,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitAssignExpr(Expr.Assign expr) {
         resolve(expr.value);
-        resolveLocal(expr, expr.name, false);
+        resolveLocal(expr, expr.name);
         return null;
     }
 
@@ -178,8 +216,26 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitSuperExpr(Expr.Super expr) {
+        if (currentClass == ClassType.NONE) {
+            ORLang.error(expr.keyword, "Can't use 'super' outside of a class.");
+        } else if (currentClass != ClassType.SUBCLASS) {
+            ORLang.error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+            ORLang.error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+        }
+        resolveLocal(expr, expr.keyword);
+        return null;
+    }
+
+    @Override
     public Void visitThisExpr(Expr.This expr) {
-        resolveLocal(expr, expr.keyword, false);
+        if (currentClass == ClassType.NONE) {
+            ORLang.error(expr.keyword,
+                    "Can't use 'this' outside of a class.");
+            return null;
+        }
+
+        resolveLocal(expr, expr.keyword);
         return null;
     }
 
@@ -207,13 +263,13 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
             ORLang.error(expr.name, "Can't read local variable in its own initializer.");
         }
-        resolveLocal(expr, expr.name, true);
+        resolveLocal(expr, expr.name);
         return null;
     }
 
     @Override
     public Void visitFunctionExpr(Expr.Function expr) {
-        resolveFunction(new Stmt.Function(null, expr), FunctionType.FUNCTION);
+        resolveFunction(expr, FunctionType.FUNCTION);
         return null;
     }
 
@@ -231,16 +287,18 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         expr.accept(this);
     }
 
-    private void resolveFunction(Stmt.Function function, FunctionType type) {
+    private void resolveFunction(Expr.Function function, FunctionType type) {
         FunctionType enclosingFunction = currentFunction;
-        Expr.Function exprFunction = function.function;
         currentFunction = type;
+
         beginScope();
-        for (Token param : exprFunction.parameters) {
-            declare(param);
-            define(param);
+        if (function.parameters != null) {
+            for (Token param : function.parameters) {
+                declare(param);
+                define(param);
+            }
         }
-        resolve(exprFunction.body);
+        resolve(function.body);
         endScope();
         currentFunction = enclosingFunction;
     }
@@ -275,17 +333,14 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         scopes.peek().get(name.lexeme).state = VariableState.DEFINED;
     }
 
-    private void resolveLocal(Expr expr, Token name, boolean isRead) {
+    private void resolveLocal(Expr expr, Token name) {
         for (int i = scopes.size() - 1; i >= 0; i--) {
             if (scopes.get(i).containsKey(name.lexeme)) {
                 interpreter.resolve(expr, scopes.size() - 1 - i);
-
-                // Mark it used.
-                if (isRead) {
-                    scopes.get(i).get(name.lexeme).state = VariableState.READ;
-                }
+                scopes.get(i).get(name.lexeme).state = VariableState.READ;
                 return;
             }
         }
+        // Not found, assume it's global
     }
 }

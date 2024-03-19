@@ -16,8 +16,8 @@ public class ORInstance {
             return fields.get(name.lexeme);
         }
 
-        ORFunction method = klass.findMethod(name.lexeme);
-        if (method != null) return method.bind(this);
+        ORFunction method = klass.findMethod(this, name.lexeme);
+        if (method != null) return method;
 
         throw new RuntimeError(name, String.format("Undefined property %s.", name.lexeme));
     }
