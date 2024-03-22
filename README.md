@@ -1,31 +1,35 @@
 ```
---------------------------------------------------
-
---- ORLang - inspired by Robert Nystrom's jLox ---
 
 --------------------------------------------------
+------------- Tree-walk interpreter --------------
+--------------------------------------------------
 
-ORLang java implementation (jlox):
-└── ORLang
+Structure:
+  src
     └── com
         └── craftinginterpreters
             ├── ORLang
-            │   ├── AstPrinter.class
-            │   ├── Expr.class
-            │   ├── Interpreter.class
-            │   ├── ORLang.class
-            │   ├── Parser.class
-            │   ├── RuntimeError.class
-            │   ├── Scanner.class
-            │   ├── Stmt.class
-            │   ├── Token.class
-            │   └── TokenType.class
+            │   ├── AstPrinter.java
+            │   ├── Environment.java
+            │   ├── Expr.java
+            │   ├── Interpreter.java
+            │   ├── ORCallable.java
+            │   ├── ORFunction.java
+            │   ├── ORLang.java
+            │   ├── Parser.java
+            │   ├── Return.java
+            │   ├── RuntimeError.java
+            │   ├── Scanner.java
+            │   ├── Stmt.java
+            │   ├── Token.java
+            │   └── TokenType.java
             └── Tool
-                └── GenerateAst.class
+                └── GenerateAst.java
 
+Logic:
+Scanner -> Parser -> Resolver -> Interpreter
 
-
--- Tree-walk interpreter directly executing AST --
+--------------------------------------------------
 
 Parser's grammar rules:
 program     -> declaration* EOF ;
