@@ -106,3 +106,25 @@ logic_and   -> comma ( "and" comma )* ;
 comma       -> ternary ( ( "," ) ternary )* ;
 ternary     -> equality ( "?" expression ":" expression )* ;
 ```
+
+## How to compile & run (without Intellij Idea)
+```
+// compile
+javac src/com/craftinginterpreters/ORLang/*.java 
+
+// run interpreter
+cd src
+java com.craftinginterpreters.ORLang.ORLang
+
+// run file
+cd src
+java com.craftinginterpreters.ORLang.ORLang <filename>
+```
+
+
+## Performance
+```
+java com.craftinginterpreters.ORLang.ORLang ../samples/testFibTime.lox 
+1.02334155E8
+84.70199990272522
+```
