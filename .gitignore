@@ -33,3 +33,5 @@ bin/
 *.hi
 *.o
 /challenges/funcpoly.hs
+
+*.class
